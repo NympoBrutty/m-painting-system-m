@@ -1,0 +1,46 @@
+name: Stage A — lint + tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'stageA/**'
+      - '.github/workflows/stageA-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'stageA/**'
+
+jobs:
+  validate:
+    name: Validate Stage A Contracts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate contracts
+        run: |
+          python stageA/tools/batch_validator.py stageA/contracts \
+            --glossary stageA/glossary/glossary_v1.json \
+            --schema stageA/schema/contract_schema_stageA_v4.json \
+            --out stageA/_reports \
+            --verbose
+
+      - name: Run tests
+        run: |
+          python -m unittest discover -s stageA/tests -p "test_*.py" -v
+
+      - name: Upload validation reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stageA-validation-reports
+          path: stageA/_reports/
+          retention-days: 30

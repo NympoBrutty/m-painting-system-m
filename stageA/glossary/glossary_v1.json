@@ -1,0 +1,147 @@
+{
+  "_schema": {
+    "name": "glossary",
+    "version": "1.0.0",
+    "created_at": "2025-12-16T00:00:00+02:00",
+    "updated_at": "2025-12-24T22:00:00+02:00"
+  },
+
+  "description": "Canonical glossary for Stage A contracts",
+
+  "terms": {
+    "SPS": {
+      "definition": "Shot / Plan System — система формалізації типів планів і кадрування сцени.",
+      "status": "stable",
+      "abbreviation_for": "Shot / Plan System",
+      "source_modules": ["A-I-3"]
+    },
+    "NSS": {
+      "definition": "Negative Space System — система аналізу геометрії негативного простору.",
+      "status": "stable",
+      "abbreviation_for": "Negative Space System",
+      "source_modules": ["A-III-2"]
+    },
+    "LINE": {
+      "definition": "Line Engine — система нормалізації та очищення контурів.",
+      "status": "stable",
+      "abbreviation_for": "Line Engine",
+      "source_modules": ["A-IV-2"]
+    },
+    "ECU": {
+      "definition": "Extreme Close-Up — надкрупний план.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "CU": {
+      "definition": "Close-Up — крупний план.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "MCU": {
+      "definition": "Medium Close-Up — середньо-крупний план.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "MS": {
+      "definition": "Medium Shot — середній план.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "MLS": {
+      "definition": "Medium Long Shot — середньо-загальний план.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "LS": {
+      "definition": "Long Shot — загальний план.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "ELS": {
+      "definition": "Extreme Long Shot — дуже далекий план.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "VERTICAL": {
+      "definition": "Вертикальний коридор негативного простору.",
+      "status": "stable",
+      "source_modules": ["A-III-2"]
+    },
+    "HORIZONTAL": {
+      "definition": "Горизонтальний коридор негативного простору.",
+      "status": "stable",
+      "source_modules": ["A-III-2"]
+    },
+    "DIAGONAL": {
+      "definition": "Діагональний коридор негативного простору.",
+      "status": "stable",
+      "source_modules": ["A-III-2"]
+    },
+    "RADIAL": {
+      "definition": "Радіальний коридор негативного простору.",
+      "status": "stable",
+      "source_modules": ["A-III-2"]
+    },
+    "contour": {
+      "definition": "Контур форми, що визначає її межі.",
+      "status": "stable",
+      "source_modules": ["A-IV-2"]
+    },
+    "silhouette": {
+      "definition": "Зовнішній контур маси без внутрішніх деталей.",
+      "status": "stable",
+      "source_modules": ["A-IV-2"]
+    },
+    "stroke": {
+      "definition": "Лінія фіксованої товщини для побудови контуру.",
+      "status": "stable",
+      "source_modules": ["A-IV-2"]
+    },
+    "junction": {
+      "definition": "Точка з'єднання контурних ліній.",
+      "status": "stable",
+      "source_modules": ["A-IV-2"]
+    },
+    "negative_space": {
+      "definition": "Частина композиції, не зайнята позитивними масами.",
+      "status": "stable",
+      "source_modules": ["A-III-2"]
+    },
+    "corridor": {
+      "definition": "Зв'язна область негативного простору через кадр.",
+      "status": "stable",
+      "source_modules": ["A-III-2"]
+    },
+    "void": {
+      "definition": "Ізольована область негативного простору.",
+      "status": "stable",
+      "source_modules": ["A-III-2"]
+    },
+    "framing_tightness": {
+      "definition": "Ступінь щільності кадрування відносно об'єкта.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "headroom": {
+      "definition": "Простір над головою фігури.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    },
+    "lookroom": {
+      "definition": "Простір у напрямку погляду фігури.",
+      "status": "stable",
+      "source_modules": ["A-I-3"]
+    }
+  },
+
+  "units": {
+    "fraction": { "description": "Безрозмірне значення 0.0–1.0", "range": [0.0, 1.0] },
+    "px": { "description": "Пікселі", "range": [0, null] },
+    "count": { "description": "Ціле число (кількість)", "range": [0, null] },
+    "index": { "description": "Індекс (ціле)", "range": [0, null] },
+    "ratio": { "description": "Співвідношення", "range": [0.0, null] },
+    "per_mpx": { "description": "На мегапіксель площі", "range": [0.0, null] },
+    "category": { "description": "Категоріальне значення (enum)", "range": null },
+    "flag": { "description": "Булевий прапорець", "range": [false, true] }
+  }
+}

@@ -1,0 +1,459 @@
+{
+  "_schema": {
+    "name": "A-PRACTICAL.contract",
+    "version": "4.0.0",
+    "stage": "A.contract_only",
+    "maturity_stage": "pilot",
+    "static_frame_only": true,
+    "underpainting_intent": "structure_plus_masks",
+    "created_at": "2025-12-16T00:00:00+02:00",
+    "updated_at": "2025-12-24T22:00:00+02:00"
+  },
+
+  "module_id": "A-IV-2",
+  "module_abbr": "LINE",
+  "module_type": "PROCESS",
+  "module_name": {
+    "uk": "ЛІНІЙНИЙ МОТОР",
+    "en": "LINE ENGINE"
+  },
+  "version": "1.1.0",
+
+  "description": "Модуль A-IV-2 нормалізує, очищує та стандартизує контурні лінії сцени до єдиного канонічного формату A-IV-1: єдина товщина, чиста топологія, відсутність дублювань, розривів і шуму. Після LINE ENGINE дані готові для plotter-workflow та downstream модулів B/C без порушення геометрії A-I-1.",
+
+  "io_contract": {
+    "inputs": [
+      {
+        "artifact_id": "input_vector_paths",
+        "type": "svg",
+        "scope": "public",
+        "description": "Векторні контури у форматі SVG path (пріоритетне джерело)"
+      },
+      {
+        "artifact_id": "input_raster_edges",
+        "type": "mask",
+        "scope": "public",
+        "description": "Растрова edge-map як альтернативне джерело контурів"
+      }
+    ],
+    "outputs": [
+      {
+        "artifact_id": "normalized_svg",
+        "type": "svg",
+        "scope": "public",
+        "description": "Нормалізований SVG з канонічними контурами"
+      },
+      {
+        "artifact_id": "line_mask",
+        "type": "mask",
+        "scope": "public",
+        "description": "Растрова маска ліній для композитингу"
+      },
+      {
+        "artifact_id": "clean_contour_layer",
+        "type": "json",
+        "scope": "public",
+        "description": "Метадані шару з класифікацією контурів"
+      }
+    ]
+  },
+
+  "parameters": {
+    "stroke_width_norm": {
+      "type": "float",
+      "unit": "px",
+      "range": [1.0, 1.0],
+      "default": 1.0,
+      "description": "Єдина канонічна товщина лінії (згідно A-IV-1, фіксовано 1.0 px)."
+    },
+    "closure_integrity": {
+      "type": "float",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "default": 0.95,
+      "description": "Ступінь замкненості контурів (для коректної побудови масок)."
+    },
+    "junction_cleanliness": {
+      "type": "float",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "default": 0.9,
+      "description": "Якість стиків/перетинів: чистота junction-логіки, відсутність «бруду»."
+    },
+    "curve_smoothness": {
+      "type": "float",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "default": 0.8,
+      "description": "Плавність кривих: зниження «шереху» без стирання конструкції."
+    },
+    "line_density": {
+      "type": "float",
+      "unit": "per_mpx",
+      "range": [0.0, 5.0],
+      "default": 1.5,
+      "description": "Щільність лінії на мегапіксель площі (контроль лінійного шуму)."
+    },
+    "inner_to_outer_ratio": {
+      "type": "float",
+      "unit": "ratio",
+      "range": [0.0, 0.5],
+      "default": 0.25,
+      "description": "Співвідношення внутрішніх контурів до зовнішніх (силуетних)."
+    },
+    "classification_accuracy": {
+      "type": "float",
+      "unit": "fraction",
+      "range": [0.0, 1.0],
+      "default": 0.9,
+      "description": "Оцінка коректності маркування типів ліній (body/object/shadow/inner/technical)."
+    },
+    "simplification_epsilon": {
+      "type": "float",
+      "unit": "px",
+      "range": [0.1, 5.0],
+      "default": 1.0,
+      "description": "Поріг спрощення кривих (Ramer-Douglas-Peucker epsilon)."
+    }
+  },
+
+  "parameter_groups": {
+    "stroke_canon": ["stroke_width_norm"],
+    "topology_quality": ["closure_integrity", "junction_cleanliness", "curve_smoothness"],
+    "density_control": ["line_density", "inner_to_outer_ratio"],
+    "classification": ["classification_accuracy"],
+    "processing": ["simplification_epsilon"]
+  },
+
+  "constraints": [
+    {
+      "expr": "stroke_width_norm == 1.0",
+      "error_code": "E001"
+    },
+    {
+      "expr": "closure_integrity >= 0.8",
+      "error_code": "E002"
+    },
+    {
+      "expr": "inner_to_outer_ratio <= 0.5",
+      "error_code": "E003"
+    },
+    {
+      "expr": "line_density <= 5.0",
+      "error_code": "E004"
+    },
+    {
+      "expr": "junction_cleanliness >= 0.7",
+      "error_code": "E005"
+    },
+    {
+      "expr": "simplification_epsilon >= 0.1 && simplification_epsilon <= 5.0",
+      "error_code": "E006"
+    }
+  ],
+
+  "validation": {
+    "rules": [
+      {
+        "name": "low_curve_smoothness",
+        "condition": "curve_smoothness < 0.5",
+        "severity": "warning",
+        "message": "curve_smoothness < 0.5 — можливий «шерех» або ламаність кривих.",
+        "error_code": "W001"
+      },
+      {
+        "name": "high_line_density",
+        "condition": "line_density > 3.5",
+        "severity": "warning",
+        "message": "line_density > 3.5 — можливе перевантаження внутрішніми лініями або шумом.",
+        "error_code": "W002"
+      },
+      {
+        "name": "high_inner_to_outer",
+        "condition": "inner_to_outer_ratio > 0.35",
+        "severity": "warning",
+        "message": "inner_to_outer_ratio > 0.35 — багато внутрішніх контурів; перевір структурну логіку.",
+        "error_code": "W003"
+      },
+      {
+        "name": "low_classification_accuracy",
+        "condition": "classification_accuracy < 0.8",
+        "severity": "warning",
+        "message": "classification_accuracy < 0.8 — низька точність маркування типів ліній.",
+        "error_code": "W004"
+      },
+      {
+        "name": "borderline_closure",
+        "condition": "closure_integrity >= 0.8 && closure_integrity < 0.85",
+        "severity": "warning",
+        "message": "closure_integrity близький до мінімуму — можливі проблеми з масками.",
+        "error_code": "W005"
+      }
+    ]
+  },
+
+  "error_codes": [
+    {
+      "code": "E001",
+      "level": "error",
+      "title": { "uk": "Невірна товщина лінії", "en": "Invalid stroke width" },
+      "message": { "uk": "stroke_width_norm має дорівнювати 1.0 px (згідно A-IV-1).", "en": "stroke_width_norm must equal 1.0 px (per A-IV-1)." }
+    },
+    {
+      "code": "E002",
+      "level": "error",
+      "title": { "uk": "Низька замкненість контурів", "en": "Low closure integrity" },
+      "message": { "uk": "closure_integrity має бути >= 0.8.", "en": "closure_integrity must be >= 0.8." }
+    },
+    {
+      "code": "E003",
+      "level": "error",
+      "title": { "uk": "Забагато внутрішніх контурів", "en": "Excessive inner contours" },
+      "message": { "uk": "inner_to_outer_ratio має бути <= 0.5.", "en": "inner_to_outer_ratio must be <= 0.5." }
+    },
+    {
+      "code": "E004",
+      "level": "error",
+      "title": { "uk": "Надмірна щільність ліній", "en": "Excessive line density" },
+      "message": { "uk": "line_density має бути <= 5.0 per_mpx.", "en": "line_density must be <= 5.0 per_mpx." }
+    },
+    {
+      "code": "E005",
+      "level": "error",
+      "title": { "uk": "Погані стики/перетини", "en": "Poor junction cleanliness" },
+      "message": { "uk": "junction_cleanliness має бути >= 0.7.", "en": "junction_cleanliness must be >= 0.7." }
+    },
+    {
+      "code": "E006",
+      "level": "error",
+      "title": { "uk": "Epsilon поза діапазоном", "en": "Epsilon out of range" },
+      "message": { "uk": "simplification_epsilon має бути в межах [0.1, 5.0].", "en": "simplification_epsilon must be within [0.1, 5.0]." }
+    },
+    {
+      "code": "W001",
+      "level": "warning",
+      "title": { "uk": "Низька плавність кривих", "en": "Low curve smoothness" },
+      "message": { "uk": "curve_smoothness < 0.5 — можливий «шерех».", "en": "curve_smoothness < 0.5 — possible roughness." }
+    },
+    {
+      "code": "W002",
+      "level": "warning",
+      "title": { "uk": "Висока щільність ліній", "en": "High line density" },
+      "message": { "uk": "line_density > 3.5 — можливе перевантаження.", "en": "line_density > 3.5 — possible overload." }
+    },
+    {
+      "code": "W003",
+      "level": "warning",
+      "title": { "uk": "Багато внутрішніх контурів", "en": "High inner-to-outer ratio" },
+      "message": { "uk": "inner_to_outer_ratio > 0.35 — перевір структурну логіку.", "en": "inner_to_outer_ratio > 0.35 — check structural logic." }
+    },
+    {
+      "code": "W004",
+      "level": "warning",
+      "title": { "uk": "Низька точність класифікації", "en": "Low classification accuracy" },
+      "message": { "uk": "classification_accuracy < 0.8 — маркування може бути помилковим.", "en": "classification_accuracy < 0.8 — labeling may be incorrect." }
+    },
+    {
+      "code": "W005",
+      "level": "warning",
+      "title": { "uk": "Гранична замкненість", "en": "Borderline closure" },
+      "message": { "uk": "closure_integrity близький до мінімуму.", "en": "closure_integrity near minimum threshold." }
+    }
+  ],
+
+  "algorithm": {
+    "artifact_registry": [
+      { "artifact_id": "normalized_svg", "scope": "public" },
+      { "artifact_id": "line_mask", "scope": "public" },
+      { "artifact_id": "clean_contour_layer", "scope": "public" },
+      { "artifact_id": "raw_contours", "scope": "private" },
+      { "artifact_id": "unified_polylines", "scope": "private" },
+      { "artifact_id": "simplified_polylines", "scope": "private" },
+      { "artifact_id": "closed_contours", "scope": "private" },
+      { "artifact_id": "normalized_contours", "scope": "private" },
+      { "artifact_id": "clean_contours", "scope": "private" },
+      { "artifact_id": "classified_contours", "scope": "private" }
+    ],
+    "steps": [
+      {
+        "id": "S001",
+        "name": "ingest",
+        "type": "load",
+        "uses": ["input_vector_paths", "input_raster_edges"],
+        "produces": ["raw_contours"],
+        "description": "Завантажити контури з векторного джерела або з растрових edge-map."
+      },
+      {
+        "id": "S002",
+        "name": "unify_representation",
+        "type": "transform",
+        "uses": ["raw_contours"],
+        "produces": ["unified_polylines"],
+        "description": "Перетворити всі криві до уніфікованого представлення."
+      },
+      {
+        "id": "S003",
+        "name": "deduplicate_and_simplify",
+        "type": "filter",
+        "uses": ["unified_polylines", "simplification_epsilon"],
+        "produces": ["simplified_polylines"],
+        "description": "Видалити дублікати та мікро-сегменти нижче порогу шуму."
+      },
+      {
+        "id": "S004",
+        "name": "closure_pass",
+        "type": "transform",
+        "uses": ["simplified_polylines", "closure_integrity"],
+        "produces": ["closed_contours"],
+        "description": "Замкнути силуети там, де gap < closure_threshold."
+      },
+      {
+        "id": "S005",
+        "name": "topology_check",
+        "type": "validate",
+        "uses": ["closed_contours", "junction_cleanliness"],
+        "produces": ["topology_report"],
+        "description": "Виявити перетини, неправильні стики, self-crossing."
+      },
+      {
+        "id": "S006",
+        "name": "stroke_standardize",
+        "type": "normalize",
+        "uses": ["closed_contours", "stroke_width_norm"],
+        "produces": ["normalized_contours"],
+        "description": "Примусово встановити канонічний stroke 1.0 px."
+      },
+      {
+        "id": "S007",
+        "name": "artifact_cleanup",
+        "type": "filter",
+        "uses": ["normalized_contours", "curve_smoothness"],
+        "produces": ["clean_contours"],
+        "description": "Прибрати технічні мітки та залишки артефактів."
+      },
+      {
+        "id": "S008",
+        "name": "classify_lines",
+        "type": "classify",
+        "uses": ["clean_contours", "classification_accuracy"],
+        "produces": ["classified_contours"],
+        "description": "Маркувати лінії за типами: body/object/shadow/inner/technical."
+      },
+      {
+        "id": "S009",
+        "name": "compute_metrics",
+        "type": "transform",
+        "uses": ["classified_contours"],
+        "produces": ["line_metrics"],
+        "description": "Обчислити line_density, inner_to_outer_ratio та інші метрики."
+      },
+      {
+        "id": "S010",
+        "name": "validate_constraints",
+        "type": "validate",
+        "uses": ["line_metrics"],
+        "produces": ["validation_report"],
+        "description": "Перевірити всі constraints та validation rules."
+      },
+      {
+        "id": "S011",
+        "name": "export_layers",
+        "type": "export",
+        "uses": ["classified_contours", "validation_report"],
+        "produces": ["normalized_svg", "line_mask", "clean_contour_layer"],
+        "description": "Експортувати нормалізований SVG, растрову маску та метадані."
+      }
+    ]
+  },
+
+  "relations": {
+    "depends_on": ["A-IV-1", "A-I-1"],
+    "influences": ["A-V-1", "A-VI-1", "B-I-1"],
+    "conflicts_with": []
+  },
+
+  "test_cases": [
+    {
+      "id": "TC_LINE_POS_01",
+      "type": "positive",
+      "name": "Valid normalized contour set",
+      "input": {
+        "stroke_width_norm": 1.0,
+        "closure_integrity": 0.95,
+        "junction_cleanliness": 0.88,
+        "curve_smoothness": 0.92,
+        "line_density": 1.2,
+        "inner_to_outer_ratio": 0.25,
+        "classification_accuracy": 0.9
+      },
+      "expected": { "pass": true }
+    },
+    {
+      "id": "TC_LINE_POS_02",
+      "type": "positive",
+      "name": "Minimal valid configuration",
+      "input": {
+        "stroke_width_norm": 1.0,
+        "closure_integrity": 0.8,
+        "junction_cleanliness": 0.7
+      },
+      "expected": { "pass": true }
+    },
+    {
+      "id": "TC_LINE_NEG_01",
+      "type": "negative",
+      "name": "Stroke width not canonical",
+      "input": {
+        "stroke_width_norm": 2.0
+      },
+      "expected": { "pass": false, "error_code": "E001" }
+    },
+    {
+      "id": "TC_LINE_NEG_02",
+      "type": "negative",
+      "name": "Closure integrity below minimum",
+      "input": {
+        "stroke_width_norm": 1.0,
+        "closure_integrity": 0.3
+      },
+      "expected": { "pass": false, "error_code": "E002" }
+    },
+    {
+      "id": "TC_LINE_NEG_03",
+      "type": "negative",
+      "name": "Junction cleanliness too low",
+      "input": {
+        "stroke_width_norm": 1.0,
+        "junction_cleanliness": 0.5
+      },
+      "expected": { "pass": false, "error_code": "E005" }
+    },
+    {
+      "id": "TC_LINE_WARN_01",
+      "type": "warning",
+      "name": "Low curve smoothness warning",
+      "input": {
+        "stroke_width_norm": 1.0,
+        "closure_integrity": 0.95,
+        "junction_cleanliness": 0.9,
+        "curve_smoothness": 0.4,
+        "line_density": 1.0,
+        "inner_to_outer_ratio": 0.2
+      },
+      "expected": { "pass": true, "warning_code": "W001" }
+    }
+  ],
+
+  "policies": {
+    "unit_policy": "strict",
+    "constraints_dsl": {
+      "dsl_version": "1.0",
+      "syntax": "string_expr"
+    },
+    "glossary_policy": "strict",
+    "i18n_policy": {
+      "default_lang": "uk",
+      "supported_langs": ["uk", "en"]
+    }
+  }
+}

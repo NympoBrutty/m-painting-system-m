@@ -1,16 +1,28 @@
-# Stage A Reports (generated, not committed)
+# =========================
+# Stage A / Reports (generated)
+# =========================
 stageA/_reports/
 _reports/
 
-# Python
+# =========================
+# Python bytecode / caches
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
+
+# Type checkers / linters / formatters
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.pyre/
+
+# =========================
+# Build / packaging artifacts
+# =========================
 build/
-develop-eggs/
 dist/
+develop-eggs/
 downloads/
 eggs/
 .eggs/
@@ -23,34 +35,94 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.whl
 
+# =========================
 # Virtual environments
+# =========================
 .env
 .venv
 env/
 venv/
 ENV/
+pip-wheel-metadata/
 
-# IDE
+# =========================
+# IDE / Editor
+# =========================
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
 
-# OS
+# =========================
+# OS junk
+# =========================
 .DS_Store
 Thumbs.db
 
-# Testing
+# =========================
+# Testing / coverage
+# =========================
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 .tox/
 .nox/
+nosetests.xml
+coverage.xml
+test-results/
 
+# =========================
 # Jupyter
+# =========================
 .ipynb_checkpoints/
 
+# =========================
 # Logs
+# =========================
 *.log
+logs/
+
+# =========================
+# Secrets / credentials (DO NOT COMMIT)
+# =========================
+# dotenv variants
+.env.*
+!.env.example
+!.env.template
+
+# common secrets files
+secrets/
+secret/
+*.secret
+*.secrets
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# credentials / tokens (common filenames)
+credentials.json
+credentials*.json
+token.json
+tokens.json
+auth.json
+oauth.json
+service_account*.json
+
+# tool configs that may contain tokens (keep examples committed)
+.hf_token
+.hf_token.txt
+.huggingface/token
+!.huggingface/token.example
+!.hf_token.example
+
+# local overrides
+config.local.*
+settings.local.*
+local_settings.*

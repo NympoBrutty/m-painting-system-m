@@ -1,17 +1,22 @@
 # =============================================================================
-# Stage A — Makefile
+# Stage A (+ Stage B) — Makefile
 # =============================================================================
 # Usage:
 #   make              — show help
 #   make validate     — validate all contracts
 #   make test         — run unit tests
-#   make all          — validate + test (full check)
+#   make all          — validate + test (Stage A full check)
 #   make quick        — quick validation only (no tests)
 #   make new          — generate new contract template (interactive)
-#   make clean        — remove generated reports
+#   make clean        — remove generated reports + caches
+#
+#   make stageB       — Stage B: generate skeletons + run B-Gate tests
+#   make stageB-gen   — Stage B: generate only
+#   make stageB-test  — Stage B: tests only
+#   make all-stages   — Stage A + Stage B
 # =============================================================================
 
-.PHONY: help all validate test quick new clean lint
+.PHONY: help all validate test quick new clean lint ci stageB stageB-gen stageB-test all-stages
 
 # Default Python interpreter
 PYTHON ?= python3
@@ -34,30 +39,39 @@ NC := \033[0m # No Color
 help:
 	@echo ""
 	@echo "╔══════════════════════════════════════════════════════════════╗"
-	@echo "║              Stage A — Make Commands                         ║"
+	@echo "║           Stage A (+ Stage B) — Make Commands                ║"
 	@echo "╚══════════════════════════════════════════════════════════════╝"
 	@echo ""
-	@echo "  make all        — Full validation + tests (recommended)"
-	@echo "  make validate   — Validate all contracts"
-	@echo "  make test       — Run unit tests"
-	@echo "  make quick      — Quick validation (skip tests)"
-	@echo "  make lint       — Lint contracts with verbose output"
-	@echo "  make new        — Generate new contract from template"
-	@echo "  make clean      — Remove generated reports"
+	@echo "  Stage A:"
+	@echo "    make all          — Full validation + tests (recommended)"
+	@echo "    make validate     — Validate all contracts"
+	@echo "    make test         — Run unit tests"
+	@echo "    make quick        — Quick validation (skip tests)"
+	@echo "    make lint         — Lint contracts with verbose output"
+	@echo "    make new          — Generate new contract from template"
+	@echo "    make clean        — Remove generated reports + caches"
+	@echo ""
+	@echo "  Stage B:"
+	@echo "    make stageB       — Generate skeletons + B-Gate tests"
+	@echo "    make stageB-gen   — Generate skeletons only"
+	@echo "    make stageB-test  — Run B-Gate tests only"
+	@echo "    make all-stages   — Stage A + Stage B"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make all"
+	@echo "  make stageB"
+	@echo "  make all-stages"
 	@echo "  make new MODULE_ID=A-V-1 ABBR=TONE TYPE=PROCESS"
 	@echo ""
 
 # =============================================================================
-# MAIN TARGETS
+# STAGE A — MAIN TARGETS
 # =============================================================================
 
 ## Full validation + tests
 all: validate test
 	@echo ""
-	@echo "$(GREEN)✅ All checks passed!$(NC)"
+	@echo "$(GREEN)✅ Stage A checks passed!$(NC)"
 
 ## Validate all contracts
 validate:
@@ -95,11 +109,11 @@ lint:
 		--verbose
 
 # =============================================================================
-# GENERATE NEW CONTRACT
+# STAGE A — GENERATE NEW CONTRACT
 # =============================================================================
 
 ## Generate new contract from template
-## Usage: make new MODULE_ID=A-V-1 ABBR=TONE TYPE=PROCESS NAME_UK="ТОНАЛЬНА КАРТА" NAME_EN="TONE MAP"
+## Usage: make new MODULE_ID=A-V-1 ABBR=TONE TYPE=PROCESS NAME_UK="..." NAME_EN="..."
 new:
 ifndef MODULE_ID
 	@echo "$(RED)Error: MODULE_ID is required$(NC)"
@@ -126,15 +140,43 @@ endif
 	@echo "$(YELLOW)→ Don't forget to fill in TODO sections!$(NC)"
 
 # =============================================================================
+# STAGE B — SKELETON GENERATION + GATES
+# =============================================================================
+
+## Stage B: generate + test
+stageB: stageB-gen stageB-test
+	@echo ""
+	@echo "$(GREEN)✅ Stage B checks passed!$(NC)"
+
+## Stage B: generate only
+stageB-gen:
+	@echo ""
+	@echo "▶ Stage B: Generating skeletons..."
+	@$(PYTHON) run_stageB.py --gen
+
+## Stage B: tests only
+stageB-test:
+	@echo ""
+	@echo "▶ Stage B: Running B-Gate tests..."
+	@$(PYTHON) -m unittest discover -s stageB/tests -p "test_*.py" -v
+
+## Stage A + Stage B
+all-stages: all stageB
+	@echo ""
+	@echo "$(GREEN)✅ All stages passed (Stage A + Stage B)!$(NC)"
+
+# =============================================================================
 # CLEANUP
 # =============================================================================
 
-## Remove generated reports
+## Remove generated reports + caches
 clean:
 	@echo "▶ Cleaning up..."
 	@rm -rf $(REPORTS_DIR)
+	@rm -rf stageB/_reports 2>/dev/null || true
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type f -name "*.tmp" -delete 2>/dev/null || true
 	@echo "$(GREEN)✅ Cleaned$(NC)"
 
 # =============================================================================
@@ -142,6 +184,6 @@ clean:
 # =============================================================================
 
 ## Simulate CI pipeline locally
-ci: clean all
+ci: clean all-stages
 	@echo ""
 	@echo "$(GREEN)✅ CI simulation passed!$(NC)"

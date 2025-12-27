@@ -1,128 +1,102 @@
-# =========================
-# Stage A / Reports (generated)
-# =========================
+# =============================================================================
+# painting-system — .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# POLICY NOTE (Stage B)
+# -----------------------------------------------------------------------------
+# We DO COMMIT Stage B generated skeletons:
+#   stageB/modules/*/*_autogen.py
+#   stageB/modules/*/*_autogen.md
+# This is intentional to avoid confusion and to make skeletons visible in GitHub.
+# DO NOT add ignore rules for *_autogen.* unless you intentionally change policy.
+# -----------------------------------------------------------------------------
+
+# Generated reports
 stageA/_reports/
+stageB/_reports/
 _reports/
 
-# =========================
+# Local outputs / exports (safety)
+outputs/
+out/
+export/
+exports/
+
 # Python bytecode / caches
-# =========================
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 
-# Type checkers / linters / formatters
+# Type checkers / linters
 .mypy_cache/
 .ruff_cache/
 .pytype/
 .pyre/
 
-# =========================
 # Build / packaging artifacts
-# =========================
 build/
 dist/
-develop-eggs/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
+.eggs/
+wheels/
 *.whl
 
-# =========================
 # Virtual environments
-# =========================
 .env
 .venv
 env/
 venv/
 ENV/
-pip-wheel-metadata/
 
-# =========================
 # IDE / Editor
-# =========================
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
-# =========================
 # OS junk
-# =========================
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# =========================
 # Testing / coverage
-# =========================
 .pytest_cache/
 .coverage
-.coverage.*
+coverage.xml
 htmlcov/
 .tox/
 .nox/
-nosetests.xml
-coverage.xml
-test-results/
 
-# =========================
 # Jupyter
-# =========================
 .ipynb_checkpoints/
 
-# =========================
 # Logs
-# =========================
 *.log
 logs/
 
-# =========================
-# Secrets / credentials (DO NOT COMMIT)
-# =========================
-# dotenv variants
+# Temp
+*.tmp
+*.temp
+*.bak
+
+# Secrets (NEVER COMMIT)
 .env.*
 !.env.example
-!.env.template
-
-# common secrets files
 secrets/
-secret/
-*.secret
-*.secrets
 *.key
 *.pem
 *.p12
 *.pfx
-*.crt
-*.cer
-
-# credentials / tokens (common filenames)
-credentials.json
 credentials*.json
-token.json
-tokens.json
-auth.json
-oauth.json
+token*.json
 service_account*.json
-
-# tool configs that may contain tokens (keep examples committed)
 .hf_token
-.hf_token.txt
-.huggingface/token
-!.huggingface/token.example
-!.hf_token.example
-
-# local overrides
 config.local.*
 settings.local.*
 local_settings.*

@@ -1,21 +1,29 @@
-name: Stage A — lint + tests
+name: Stage A+B — lint + tests
 
 on:
   push:
     branches: [main, develop]
     paths:
       - 'stageA/**'
+      - 'stageB/**'
+      - 'run_stageB.py'
+      - 'Makefile'
+      - 'requirements.txt'
       - '.github/workflows/stageA-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'stageA/**'
+      - 'stageB/**'
+      - 'run_stageB.py'
+      - 'Makefile'
+      - 'requirements.txt'
 
 jobs:
   validate:
-    name: Validate Stage A Contracts
+    name: Validate Stage A + Stage B Gates
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,8 +32,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Validate contracts
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # -----------------------
+      # Stage A
+      # -----------------------
+      - name: Validate contracts (Stage A)
         run: |
           python stageA/tools/batch_validator.py stageA/contracts \
             --glossary stageA/glossary/glossary_v1.json \
@@ -33,11 +50,25 @@ jobs:
             --out stageA/_reports \
             --verbose
 
-      - name: Run tests
+      - name: Run tests (Stage A)
         run: |
           python -m unittest discover -s stageA/tests -p "test_*.py" -v
 
-      - name: Upload validation reports
+      # -----------------------
+      # Stage B
+      # -----------------------
+      - name: Generate skeletons (Stage B)
+        run: |
+          make stageB-gen
+
+      - name: Run B-Gate tests (Stage B)
+        run: |
+          make stageB-test
+
+      # -----------------------
+      # Artifacts
+      # -----------------------
+      - name: Upload validation reports (Stage A)
         uses: actions/upload-artifact@v4
         if: always()
         with:
